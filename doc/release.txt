@@ -1,0 +1,116 @@
+*** Release 0.97.0, 28/09/2005 ***
+
+Renamed some protocol-related variables for clarity. 
+Made multibot start games on the server.
+
+*** Release 0.96.0, 22/09/2005 ***
+
+OpenPoker is now truly open and released under a dual GPL/commercial license. 
+
+Optimized the protocol a bit by replacing the BLIND request with a BET request. See protocol_history.txt for more changes.
+
+*** Release 0.95.1, 01/09/2005 ***
+
+1) Made sure that folded players are reset to playing at the start of the game. Players have a chance to sit out or choose to wait for the big blind during the pre-game waiting period.
+
+2) Fixed a blinds test that broke after #1.
+
+*** Release 0.95.0, 30/08/2005 ***
+
+1) New tools to poke around the database and administer the server. 
+
+Tables can be emptied with db:delete(player), db:delete(game_xref), etc.
+Individual items can be deleted with db:delete(<id>).
+Contents of db tables can be listed with db:find(player), etc.
+
+2) Changed protocol to add GOOD, BAD, error codes, etc. 
+
+3) Change login procedure to return error codes. See bottom of protocol.txt for description of error codes.
+
+4) PID is no longer required when reconnecting. The reconnect procedure now handles disconnected clients, crashed servers and smooth reconnect of someone who is in a game from a different computer. Game event history is stored by the game and is sent to update the reconnecting player.
+
+5) Maximum bad login attempts can now be configured per server. Player account will be disabled after this number of bad login attempts. See example below.
+
+(master@bigdaddy)1> db:find(player, nick, "foo").
+{atomic,[]}
+(master@bigdaddy)2> player:create("foo", "bar", "", 100).
+{atomic,18}
+(master@bigdaddy)3> db:find(player, nick, "foo").
+{atomic,[{player,18,"foo",963206692,[],100,0.00000e+0,0,none,none,none,false}]}
+(master@bigdaddy)4> db:get(player, 18, disabled).
+{atomic,false}
+(master@bigdaddy)5> db:set(player, 18, {disabled, true}).
+{atomic,ok}
+(master@bigdaddy)6> db:get(player, 18, disabled).
+{atomic,true}
+(master@bigdaddy)7> db:delete(player, 18).
+{atomic,ok}
+
+(master@bigdaddy)8> db:get(cluster_config, 0, max_login_errors).
+{atomic,5}
+
+6) Restrict chat messages to players watching or playing at the table. Watchers were not allowed to chat before. Players must be logged in to chat.
+
+7) Do not require login (and thus registration) to watch games. 
+
+8) Confirm logout with a GOOD message. Player is not disconnected from the server after logout but his server-side representation is replaced with a "visitor" process without a lot of powers. This is also the process that's started when someone connects to the server.
+
+9) Store a binary representation of the password instead of storing it in clear text. 
+
+10) Check player buy-in amount before letting the player sit down at a table.
+
+11) Add ability to start games on-demand. This can be configured per cluster.
+
+(master@bigdaddy)9> db:get(cluster_config, 0, enable_dynamic_games).
+{atomic,true}
+
+12) Add query to check your own balance. See BALANCE_INFO in the protocol.
+
+13) Buy out after leaving the table. Assuming a player has 1,000 when joining a table and buys in for 500, he will have 500 in his account balance and 500 in play. In-play amount is rolled into balance when player leaves.
+
+14) Add dealer notification. See NOTIFY_DEALER in the protocol.
+
+15) Added a test:all() test harness which can be run to make sure everything is sound.
+
+16) Fixed multibot to give time for number of open sockets (players) to build up. You should be able to do the following to launch 20k games:
+
+multibot:setup("my host or ip address").
+multibot:test("the one above", 3000, 20000, 150000).
+
+150000 is the time in milliseconds that each game will wait for bots. Bots will wait for one NOTIFY_CANCEL before joining and game won't start until another start delay has passed. 150 * 2 seconds is a lot of time to let sockets build up but you can increase it further.
+
+Use a really small start delay value to run through a few tests quickly. I was able to use a delay of 1 second on my laptop to run through 1000 games. 
+
+multibot:test(bigdaddy, 3000, 1000, 1000).
+
+Make sure to launch setup from one machine and test from another to get good numbers. I was only able to get as high as 4,000 players on my PowerBook G4 1.25Ghz with  Mac OSX 10.4.2 before I started getting time outs. I also had to increase the maximum number of file descriptors per process with "ulimit -n unlimited" (10240 on Mac OSX) and increase maximum number of processes for Erlang with 
+
+erl +P 1000000 ...
+
+as well as increasing the number of open ports with 
+
+export ERL_MAX_PORTS=10240
+
+The timeouts were likely due to my running everything on a single node, slow laptop disk, 512mb of memory and a bunch of other programs that I was running at the time. 
+
+You should be able to further increase performance by running the Mnesia master db on a separate machine with a fast disk and lots of memory.
+
+*** Release 0.90.1, 20/07/2005 ***
+
+1) Button now moves from game to game.
+
+2) ircdb.dat is supplied separately. 
+
+*** Release 0.90.0, 18/07/2005 ***
+
+1) Allow game start delay and player timeout to be configurable via game_admin:add_table(GameType, SeatCount, Limit, Delay, Timeout, Max).
+
+2) Query number of players in real-time instead of having games update the database every time players join or leave. 
+
+3) Fix inplay balance in SEAT_QUERY results.
+
+4) Increase connection timeout to 30 seconds for the tcp client and 15 seconds for the distributed tester.
+
+5) Have bots log out after leaving at the end of the game.
+
+

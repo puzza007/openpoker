@@ -1,0 +1,142 @@
+I. Installation instructions
+
+1. Install Erlang/OTP. 
+
+2. Unpack the contents of openpoker.tgz into a directory 
+and switch to that directory. Retrieve http://wagerlabs.com/ircdb.dat.gz and unpack it into src/ under the installation directory. Switch to the src/ directory.
+
+3. Pick a name for your Mnesia Master node. Lets assume master1. Recompile your files.
+
+erlc cardgame.erl
+erlc betting.erl blinds.erl
+erlc ... (the rest of your files)
+
+4. Figure out your fully qualified host name. You can get this 
+by running hostname on Unix.
+
+5. Run the following sequence from the installation directory:
+
+erl -sname master1
+schema:install([node()]).
+halt().
+
+Note that the dots (.) at the end of the install and halt commands are required!
+
+My scenario looks like this:
+
+bigdaddy:/tmp/release joelr$ erl -sname master1
+Erlang (BEAM) emulator version 5.4.6 [source] [hipe] [threads:0]
+
+Eshell V5.4.6  (abort with ^G)
+(master1@bigdaddy)1> schema:install([node()]).
+ok
+(master1@bigdaddy)2> halt().
+
+6. Make sure a directory called Mnesia.master1@... has been created.
+
+In my case:
+
+bigdaddy:/tmp/release joelr$ ls Mnesia.master1\@bigdaddy/
+LATEST.LOG              game_history.DCD        player_data.DCD
+cluster_config.DCD      game_xref.DCD           schema.DAT
+game_config.DCD         player.DCD
+bigdaddy:/tmp/release joelr$ 
+
+7. Start the test harness. The test scenario assumes that the gateway will run on port 3000 and the game server will run on port 2000. The argument to setup is the host name of the computer where the game server is running. This host name should resolve so that poker clients can connect to it.
+
+In my case:
+
+erl -sname master1 -s mnesia start
+
+then
+
+(master@bigdaddy)1> test:all().
+Starting a port server on 10000...
+Starting a port server on 10000...
+Starting a port server on 10000...
+334: CHAT: 0: Game is cancelled, not enough players
+334: CANCEL
+334: JOIN: 3 at seat#1
+334: JOIN: 4 at seat#2
+334: CHAT: 0: Game is starting
+334: START
+334: DEALER: seat#2
+334: SB: seat#1
+334: BB: seat#2
+334: BET: 3, 5.00          
+334: BET: 4, 10.00         
+334: CARD: 3
+334: CARD: 4
+334: CARD: 3
+334: CARD: 4
+334: STAGE: 1
+334: STATE: 3 = 2
+334: WIN: 4, 15.00         
+334: END
+Starting a port server on 10000...
+Starting a port server on 10000...
+ok
+
+then 
+
+(master@bigdaddy)2> multibot:create_players().
+(master@bigdaddy)3> multibot:setup("bigdaddy").
+multibot:cleanup: deleting game info...
+multibot:cleanup: deleting player info...
+multibot:cleanup: deleting game info...
+multibot:cleanup: deleting player info...
+Starting a port server on 2000...
+gateway:start(master@bigdaddy, 3000, 1000)
+Waiting for game servers...
+Starting a port server on 3000...
+ok
+
+8. Run the tests
+
+In my case:
+
+(master@bigdaddy)4> multibot:test(localhost, 3000, 10).
+gateway: 0.352000ms
+gateway: 0.354000ms
+gateway: 0.551000ms
+gateway: 0.364000ms
+gateway: 0.923000ms
+gateway: 3.25000ms
+gateway: 4.75000ms
+gateway: 12.0250ms
+Connecting to bigdaddy:2000
+Connecting to bigdaddy:2000
+Connecting to bigdaddy:2000
+Connecting to bigdaddy:2000
+Connecting to bigdaddy:2000
+Connecting to bigdaddy:2000
+Connecting to bigdaddy:2000
+Connecting to bigdaddy:2000
+gateway: 0.282000ms
+gateway: 0.368000ms
+Connecting to bigdaddy:2000
+Connecting to bigdaddy:2000
+Elapsed: 11.9770s, Average run time: 1.19770 seconds
+MultiBot exited, 11.9800 seconds elapsed
+ok
+(master@bigdaddy)5> halt().
+
+9. Arguments to the distributed testing harness
+
+The first argument to multibot:test() is the host where the gateway
+is running. The second is the port that the gateway is listening on
+ and the third argument is the number of games
+to run simultaneously. You can also add "true" as a fourth parameter,
+to get lots of tracing output:
+
+multibot:test(localhost, 3000, 10, true).
+
+Multibot launches the given number of games simultaneously
+and an "observer" bot is launched to watch each game. 
+Passing true as the fourth parameter to multibot:test()
+tells the observer to print what it sees.
+
+Note that the default installation is limited to 100 simultaneous games.
+
+10. The test harness really tries to overwhelm the test setup by connecting very rapidly so you might see connection refused and similar errors. I'm working these out.
+

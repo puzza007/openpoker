@@ -1,0 +1,52 @@
+*** September 22, 2005 11:41:33 AM ***
+
+Changed COMEBACK to SITIN.
+Changed START_GAME to CREATE_GAME.
+Changed GAME to GAME_SUMMARY.
+Changed PLAYER to PLAYER_SUMMARY.
+Changed NOTIFY_BUTTON to use seat# instead of PID.
+
+Removed NOTIFY_SMALL_BLIND and NOTIFY_BIG_BLIND and added NOTIFY_BET (#27) instead.
+Removed NOTIFY_DEALER as NOTIFY_BUTTON should suffice.
+Changed BLIND to BET and eliminated it entirely.
+Removed BLID_REQ as RAISE should be used instead.
+Changed PLAYER_SUMMARY to PLAYER_INFO.
+Changed packet code for BAD to 250.
+
+Added NOTIFY_SB and NOTIFY_BB.
+
+*** August 29, 2005 4:48:33 PM ***
+
+Added GOOD, BAD, START_GAME.
+Added error codes for BAD. 
+Removed PID from LOGIN.
+Added BALANCE_INFO and BALANCE.
+Added START_GAME.
+Added NOTIFY_DEALER.
+
+*** July 7, 2005 5:38:57 PM ***
+
+Added SEAT_QUERY and PLAYER_INFO. 
+Minor fix to SEAT_STATE.
+
+*** June 16, 2005 10:47:43 PM ***
+
+Added NOTIFY_CANCEL.
+
+*** June 13, 2005 3:22:43 PM ***
+
+Added GAME_QUERY.
+
+*** June 9, 2005 9:39:10 AM ***
+
+Added HANDOFF.
+
+*** June 6, 2005 9:11:39 AM ***
+
+Added sequence numbers to outgoing packets.
+Added PID to LOGIN to allow for reconnects.
+Added buy-in amount to JOIN.
+Updated description for LOGIN.
+
+Note that for LOGIN and NOTIFY_CHAT fields have changed order.
+
